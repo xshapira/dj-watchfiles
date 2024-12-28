@@ -33,3 +33,11 @@ class SimpleTestCase(test.SimpleTestCase):
         def enterContext(self, cm: AbstractContextManager[_T]) -> _T:
             result: _T = _enter_context(cm, self.addCleanup)
             return result
+
+
+class TestCase(test.TestCase):
+    if sys.version_info < (3, 11):
+
+        def enterContext(self, cm: AbstractContextManager[_T]) -> _T:
+            result: _T = _enter_context(cm, self.addCleanup)
+            return result
