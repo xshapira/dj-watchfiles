@@ -50,6 +50,7 @@ dependencies = [
   "coverage[toml]",
   "pytest-django",
   "pytest-randomly",
+  "parameterized",
 ]
 
 [tool.hatch.envs.test.scripts]
