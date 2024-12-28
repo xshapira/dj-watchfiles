@@ -130,8 +130,7 @@ def replaced_run_with_reloader(
     return autoreload.run_with_reloader(main_func, *args, **kwargs)
 
 
-# def replaced_get_reloader() -> autoreload.BaseReloader:
-#     return WatchfilesReloader()
-
-
-# autoreload.get_reloader = replaced_get_reloader
+autoreload.run_with_reloader = replaced_run_with_reloader
+autoreload.get_reloader = lambda: WatchfilesReloader(
+    getattr(settings, "WATCHFILES", {}).copy()
+)
