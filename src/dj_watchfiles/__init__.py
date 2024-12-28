@@ -12,6 +12,12 @@ from watchfiles import Change
 from watchfiles import watch
 
 
+"""Use watchfiles in Django’s autoreloader."""
+
+__version__ = "2.0.0"
+__license__ = "MIT License"
+
+
 class MutableWatcher:
     """
     Watchfiles doesn't give us a way to adjust watches at runtime, but it does
