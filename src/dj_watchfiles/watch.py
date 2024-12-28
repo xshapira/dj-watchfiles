@@ -4,7 +4,7 @@ import threading
 from collections.abc import Generator, Iterable
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from django.utils import autoreload
 from watchfiles import Change, watch
@@ -19,11 +19,14 @@ class MutableWatcher:
     underlying watchfiles iterator when roots are added or removed.
     """
 
-    def __init__(self, filter: Callable[[Change, str], bool]) -> None:
+    def __init__(
+        self, filter: Callable[[Change, str], bool], watchfiles_settings: dict[str, Any]
+    ) -> None:
         self.change_event = threading.Event()
         self.stop_event = threading.Event()
         self.roots: set[Path] = set()
         self.filter = filter
+        self.watchfiles_settings = watchfiles_settings
 
     def set_roots(self, roots: set[Path]) -> None:
         if roots != self.roots:
@@ -38,22 +41,25 @@ class MutableWatcher:
             if self.stop_event.is_set():
                 return
             self.change_event.clear()
-            for changes in watch(
-                *self.roots,
-                watch_filter=self.filter,
-                stop_event=self.stop_event,
-                debounce=False,
-                rust_timeout=100,
-                yield_on_timeout=True,
-            ):
+            watch_kwargs = {
+                "watch_filter": self.filter,
+                "stop_event": self.stop_event,
+                "debounce": False,
+                "rust_timeout": 100,
+                "yield_on_timeout": True,
+                **self.watchfiles_settings,
+            }
+
+            for changes in watch(*self.roots, **watch_kwargs):
                 if self.change_event.is_set():
                     break
                 yield changes
 
 
 class WatchfilesReloader(autoreload.BaseReloader):
-    def __init__(self) -> None:
-        self.watcher = MutableWatcher(self.file_filter)
+    def __init__(self, watchfiles_settings: dict[str, Any]) -> None:
+        self.watchfiles_settings = watchfiles_settings
+        self.watcher = MutableWatcher(self.file_filter, watchfiles_settings)
         self.watched_files_set: set[Path] = set()
         super().__init__()
 
