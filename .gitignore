@@ -1,0 +1,11 @@
+*.egg-info/
+*.pyc
+/.coverage
+/.coverage.*
+/.tox
+/build/
+/dist/
+.DS_Store
+.venv
+.vscode
+.sourcery.yaml

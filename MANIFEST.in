@@ -1,0 +1,6 @@
+prune tests
+include CHANGELOG.md
+include LICENSE
+include pyproject.toml
+include README.md
+include src/*/py.typed
