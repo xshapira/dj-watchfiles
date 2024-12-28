@@ -9,6 +9,7 @@ from typing import Any, Callable, ParamSpec
 
 from django.conf import settings
 from django.utils import autoreload
+from django.utils.module_loading import import_string
 from watchfiles import Change, watch
 
 P = ParamSpec("P")
@@ -111,6 +112,11 @@ def replaced_run_with_reloader(
     main_func: Callable[..., Any], *args: P.args, **kwargs: P.kwargs
 ) -> None:
     watchfiles_settings = getattr(settings, "WATCHFILES", {}).copy()
+
+    if "watch_filter" in watchfiles_settings:
+        watchfiles_settings["watch_filter"] = import_string(
+            watchfiles_settings["watch_filter"]
+        )()
 
     if watchfiles_settings.get("debug"):
         log_level = logging.DEBUG
