@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import logging
 import threading
 from collections.abc import Generator, Iterable
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, ParamSpec
 
+from django.conf import settings
 from django.utils import autoreload
 from watchfiles import Change, watch
+
+P = ParamSpec("P")
 
 
 class MutableWatcher:
@@ -103,8 +107,25 @@ class WatchfilesReloader(autoreload.BaseReloader):
             yield
 
 
-def replaced_get_reloader() -> autoreload.BaseReloader:
-    return WatchfilesReloader()
+def replaced_run_with_reloader(
+    main_func: Callable[..., Any], *args: P.args, **kwargs: P.kwargs
+) -> None:
+    watchfiles_settings = getattr(settings, "WATCHFILES", {}).copy()
+
+    if watchfiles_settings.get("debug"):
+        log_level = logging.DEBUG
+    else:
+        log_level = 40 - 10 * kwargs["verbosity"]
+
+    watchfiles_settings["debug"] = log_level == logging.DEBUG
+    logging.getLogger("watchfiles").setLevel(log_level)
+    autoreload.get_reloader = lambda: WatchfilesReloader()
+
+    return autoreload.run_with_reloader(main_func, *args, *kwargs)
 
 
-autoreload.get_reloader = replaced_get_reloader
+# def replaced_get_reloader() -> autoreload.BaseReloader:
+#     return WatchfilesReloader()
+
+
+# autoreload.get_reloader = replaced_get_reloader
