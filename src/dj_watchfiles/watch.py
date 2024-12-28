@@ -125,7 +125,7 @@ def replaced_run_with_reloader(
 
     watchfiles_settings["debug"] = log_level == logging.DEBUG
     logging.getLogger("watchfiles").setLevel(log_level)
-    autoreload.get_reloader = lambda: WatchfilesReloader()
+    autoreload.get_reloader = lambda: WatchfilesReloader(watchfiles_settings)
 
     return autoreload.run_with_reloader(main_func, *args, **kwargs)
 
