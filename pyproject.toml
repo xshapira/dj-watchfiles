@@ -51,6 +51,7 @@ dependencies = [
   "pytest-django",
   "pytest-randomly",
   "parameterized",
+  "typing_extensions",
 ]
 
 [tool.hatch.envs.test.scripts]
