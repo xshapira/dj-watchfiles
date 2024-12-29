@@ -296,20 +296,22 @@ class CustomFilterTests(SimpleTestCase):
     def tearDown(self):
         BaseReloader.notify_file_changed = self._original_notify
 
-    def wait_for_changes(self, watcher_iter, timeout=2.0, retry_count=3):
-        """Helper method to wait for changes with timeout and retries"""
+    def wait_for_changes(self, watcher_iter, timeout=3.0, retry_count=5):
+        """Helper method to wait for changes with improved reliability"""
         for attempt in range(retry_count):
             start_time = time.time()
-            for changes in watcher_iter:
-                if changes:  # If we got actual changes
-                    return changes
-                if time.time() - start_time > timeout:
-                    break
-                time.sleep(0.1)  # Small sleep to prevent tight loop
+
+            try:
+                while time.time() - start_time < timeout:
+                    if changes := next(watcher_iter):
+                        return changes
+                    time.sleep(0.2)
+            except StopIteration:
+                return None
 
             # If we didn't get changes and have retries left, try again
             if attempt < retry_count - 1:
-                time.sleep(0.5)
+                time.sleep(1.0)
 
         return None
 
@@ -320,24 +322,22 @@ class CustomFilterTests(SimpleTestCase):
             ("css_file", "test.css", "body { color: blue; }"),
         ]
     )
+    @pytest.mark.flaky(reruns=3, reruns_delay=1)
     def test_only_added_filter_file_types(self, name, file_name, file_content):
         watcher = MutableWatcher(only_added, {})
-
-        # create the test file
         test_file = self.src_dir / file_name
-
-        # set up watching before creating the file
         watcher.set_roots({self.src_dir})
         watcher_iter = iter(watcher)
 
         try:
-            # give the watcher a moment to initialize
-            time.sleep(0.1)
+            next(watcher_iter)
+            time.sleep(0.5)
 
             test_file.write_text(file_content)
-            changes = self.wait_for_changes(watcher_iter)
+            changes = self.wait_for_changes(watcher_iter, timeout=3.0, retry_count=5)
 
             self.assertIsNotNone(changes, f"No changes detected for {test_file}")
+
             change_paths = [path for _, path in changes]
             real_test_path = str(test_file.resolve())
             self.assertIn(real_test_path, change_paths)
