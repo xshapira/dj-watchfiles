@@ -251,8 +251,7 @@ class CustomFilterTests(SimpleTestCase):
 
     @parameterized.expand(
         [
-            ("python_file", "test.py", "print('watch me!')"),
-            ("text_file", "test.txt", "watch!"),
+            ("js_file", "test.js", "console.log('watch!')"),
             ("html_file", "test.html", "<h1>hello world!</h1>"),
             ("css_file", "test.css", "body { color: blue; }"),
         ]
