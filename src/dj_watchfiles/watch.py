@@ -8,12 +8,14 @@ from pathlib import Path
 from typing import Any, Callable
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.utils import autoreload
 from django.utils.module_loading import import_string
 from typing_extensions import ParamSpec
 from watchfiles import Change, watch
 
 P = ParamSpec("P")
+ORIGINAL_RUN_WITH_RELOADER = autoreload.run_with_reloader
 
 
 class MutableWatcher:
@@ -112,23 +114,32 @@ class WatchfilesReloader(autoreload.BaseReloader):
 def replaced_run_with_reloader(
     main_func: Callable[..., Any], *args: P.args, **kwargs: P.kwargs
 ) -> None:
-    watchfiles_settings = getattr(settings, "WATCHFILES", {}).copy()
+    try:
+        watchfiles_settings = getattr(settings, "WATCHFILES", {}).copy()
+    except (ImproperlyConfigured, AttributeError):
+        watchfiles_settings = {}
 
     if "watch_filter" in watchfiles_settings:
-        watchfiles_settings["watch_filter"] = import_string(
-            watchfiles_settings["watch_filter"]
-        )()
+        try:
+            watchfiles_settings["watch_filter"] = import_string(
+                watchfiles_settings["watch_filter"]
+            )()
+        except (AttributeError, ValueError) as exc:
+            logging.warning(
+                f"Failed to import watch_filter '{watchfiles_settings['watch_filter']}': {exc}"
+            )
+            watchfiles_settings.pop("watch_filter")
 
     if watchfiles_settings.get("debug"):
         log_level = logging.DEBUG
     else:
-        log_level = 40 - 10 * kwargs["verbosity"]
+        log_level = 40 - 10 * kwargs.get("verbosity", 1)  # add default verbosity
 
     watchfiles_settings["debug"] = log_level == logging.DEBUG
     logging.getLogger("watchfiles").setLevel(log_level)
     autoreload.get_reloader = lambda: WatchfilesReloader(watchfiles_settings)
 
-    return autoreload.run_with_reloader(main_func, *args, **kwargs)
+    return ORIGINAL_RUN_WITH_RELOADER(main_func, *args, **kwargs)
 
 
 autoreload.run_with_reloader = replaced_run_with_reloader
