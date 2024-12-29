@@ -132,6 +132,3 @@ def replaced_run_with_reloader(
 
 
 autoreload.run_with_reloader = replaced_run_with_reloader
-autoreload.get_reloader = lambda: WatchfilesReloader(
-    getattr(settings, "WATCHFILES", {}).copy()
-)
