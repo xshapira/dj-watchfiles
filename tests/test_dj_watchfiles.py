@@ -264,8 +264,6 @@ class ReplacedRunWithReloaderTests(SimpleTestCase):
             original_run = autoreload.run_with_reloader
             autoreload.run_with_reloader = mock_run_with_reloader
             try:
-                from dj_watchfiles.watch import replaced_run_with_reloader
-
                 # test with different verbosity levels
                 for verbosity, expected_level in [
                     (0, logging.ERROR),  # 40 - 10 * 0 = 40 (ERROR)
