@@ -181,106 +181,91 @@ class WatchfilesReloaderTests(SimpleTestCase):
 
 
 class ReplacedRunWithReloaderTests(SimpleTestCase):
-    def test_replaced_run_with_reloader_default_settings(self):
-        def mock_main():
-            pass
+    def setUp(self):
+        self.original_run_with_reloader = autoreload.run_with_reloader
 
+        def mock_run_with_reloader(*args, **kwargs):
+            return None
+
+        self.mock_run_with_reloader = mock_run_with_reloader
+        autoreload.run_with_reloader = self.mock_run_with_reloader
+
+    def tearDown(self):
+        autoreload.run_with_reloader = self.original_run_with_reloader
+
+    def test_replaced_run_with_reloader_default_settings(self):
         with self.settings(WATCHFILES={}):
+            replaced_run_with_reloader(lambda: None, verbosity=1)
             reloader = autoreload.get_reloader()
             assert isinstance(reloader, WatchfilesReloader)
-            assert reloader.watchfiles_settings == {}
+            expected_settings = {
+                "debug": False,  # Because verbosity=1 sets log_level to WARNING
+            }
+            assert reloader.watchfiles_settings == expected_settings
 
     def test_replaced_run_with_reloader_custom_settings(self):
-        def mock_filter(*args):
-            return True
-
         custom_settings = {
-            "watch_filter": mock_filter,
+            "watch_filter": "tests.filters.only_added_factory",
             "debug": True,
         }
 
         with self.settings(WATCHFILES=custom_settings):
+            replaced_run_with_reloader(lambda: None, verbosity=1)
             reloader = autoreload.get_reloader()
             assert isinstance(reloader, WatchfilesReloader)
             assert reloader.watchfiles_settings["debug"] is True
             assert callable(reloader.watchfiles_settings["watch_filter"])
 
-        @parameterized.expand(
-            [
-                ("error_level", 0, logging.ERROR),
-                ("warning_level", 1, logging.WARNING),
-                ("info_level", 2, logging.INFO),
-                ("debug_level", 3, logging.DEBUG),
-            ]
-        )
-        def test_replaced_run_with_reloader_verbosity(
-            self, name, verbosity, expected_level
-        ):
-            with self.settings(VERBOSITY=verbosity, WATCHFILES={}):
-                reloader = autoreload.get_reloader()
-                assert isinstance(reloader, WatchfilesReloader)
-                log_level = logging.getLogger("watchfiles").level
-                assert log_level == expected_level
+    @parameterized.expand(
+        [
+            ("error_level", 0, logging.ERROR),
+            ("warning_level", 1, logging.WARNING),
+            ("info_level", 2, logging.INFO),
+            ("debug_level", 3, logging.DEBUG),
+        ]
+    )
+    def test_replaced_run_with_reloader_verbosity(
+        self, name, verbosity, expected_level
+    ):
+        with self.settings(WATCHFILES={}):
+            replaced_run_with_reloader(lambda: None, verbosity=verbosity)
+            watchfiles_logger = logging.getLogger("watchfiles")
+            assert watchfiles_logger.level == expected_level
 
     def test_replaced_run_with_reloader_with_watch_filter(self):
         """Test the watch_filter import functionality and debug settings"""
-
         filter_path = "tests.filters.only_added_factory"
         custom_settings = {"watch_filter": filter_path, "debug": True}
 
-        def mock_run_with_reloader(*args, **kwargs):
-            return None
-
         with self.settings(WATCHFILES=custom_settings):
-            original_run = autoreload.run_with_reloader
-            autoreload.run_with_reloader = mock_run_with_reloader
-            try:
-                # call the function with different verbosity levels
-                replaced_run_with_reloader(lambda: None, verbosity=1)
+            replaced_run_with_reloader(lambda: None, verbosity=1)
 
-                watchfiles_logger = logging.getLogger("watchfiles")
-                self.assertEqual(watchfiles_logger.level, logging.DEBUG)
+            watchfiles_logger = logging.getLogger("watchfiles")
+            assert watchfiles_logger.level == logging.DEBUG
 
-                reloader = autoreload.get_reloader()
-                self.assertIsInstance(reloader, WatchfilesReloader)
-                self.assertTrue(callable(reloader.watchfiles_settings["watch_filter"]))
-                self.assertTrue(reloader.watchfiles_settings["debug"])
+            reloader = autoreload.get_reloader()
+            assert isinstance(reloader, WatchfilesReloader)
+            assert callable(reloader.watchfiles_settings["watch_filter"])
+            assert reloader.watchfiles_settings["debug"]
 
-                filter_func = reloader.watchfiles_settings["watch_filter"]
-                self.assertTrue(filter_func(Change.added, "test.py"))
-                self.assertFalse(filter_func(Change.modified, "test.py"))
+            filter_func = reloader.watchfiles_settings["watch_filter"]
+            assert filter_func(Change.added, "test.py")
+            assert not filter_func(Change.modified, "test.py")
 
-            finally:
-                # restore original run_with_reloader
-                autoreload.run_with_reloader = original_run
-
-    def test_replaced_run_with_reloader_no_debug(self):
+    @parameterized.expand(
+        [
+            ("error_level", 0, logging.ERROR),
+            ("warning_level", 1, logging.WARNING),
+            ("info_level", 2, logging.INFO),
+            ("debug_level", 3, logging.DEBUG),
+        ]
+    )
+    def test_replaced_run_with_reloader_no_debug(self, name, verbosity, expected_level):
         """Test the log level calculation without debug mode"""
-
-        def mock_run_with_reloader(*args, **kwargs):
-            return None
-
         with self.settings(WATCHFILES={}):
-            original_run = autoreload.run_with_reloader
-            autoreload.run_with_reloader = mock_run_with_reloader
-            try:
-                # test with different verbosity levels
-                for verbosity, expected_level in [
-                    (0, logging.ERROR),  # 40 - 10 * 0 = 40 (ERROR)
-                    (1, logging.WARNING),  # 40 - 10 * 1 = 30 (WARNING)
-                    (2, logging.INFO),  # 40 - 10 * 2 = 20 (INFO)
-                    (3, logging.DEBUG),  # 40 - 10 * 3 = 10 (DEBUG)
-                ]:
-                    replaced_run_with_reloader(lambda: None, verbosity=verbosity)
-                    watchfiles_logger = logging.getLogger("watchfiles")
-                    self.assertEqual(
-                        watchfiles_logger.level,
-                        expected_level,
-                        f"Expected level {expected_level} for verbosity {verbosity}",
-                    )
-
-            finally:
-                autoreload.run_with_reloader = original_run
+            replaced_run_with_reloader(lambda: None, verbosity=verbosity)
+            watchfiles_logger = logging.getLogger("watchfiles")
+            assert watchfiles_logger.level == expected_level
 
 
 class CustomFilterTests(SimpleTestCase):
