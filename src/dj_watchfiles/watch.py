@@ -130,12 +130,12 @@ def replaced_run_with_reloader(
             )
             watchfiles_settings.pop("watch_filter")
 
+    settings_verbosity = watchfiles_settings.pop("verbosity", None)
+
     if watchfiles_settings.get("debug"):
         log_level = logging.DEBUG
     else:
-        settings_verbosity = watchfiles_settings.get("verbosity")
-        cli_verbosity = kwargs.get("verbosity", 1)
-        verbosity = settings_verbosity or cli_verbosity
+        verbosity = settings_verbosity or kwargs.get("verbosity", 1)
         log_level = 40 - 10 * verbosity
 
     watchfiles_settings["debug"] = log_level == logging.DEBUG
