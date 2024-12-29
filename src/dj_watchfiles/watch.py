@@ -5,11 +5,12 @@ import threading
 from collections.abc import Generator, Iterable
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Any, Callable, ParamSpec
+from typing import Any, Callable
 
 from django.conf import settings
 from django.utils import autoreload
 from django.utils.module_loading import import_string
+from typing_extensions import ParamSpec
 from watchfiles import Change, watch
 
 P = ParamSpec("P")
