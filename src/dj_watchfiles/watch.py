@@ -10,12 +10,12 @@ from typing import Any, Callable
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import autoreload
+from django.utils.autoreload import run_with_reloader
 from django.utils.module_loading import import_string
 from typing_extensions import ParamSpec
 from watchfiles import Change, watch
 
 P = ParamSpec("P")
-ORIGINAL_RUN_WITH_RELOADER = autoreload.run_with_reloader
 
 
 class MutableWatcher:
@@ -142,7 +142,7 @@ def replaced_run_with_reloader(
     logging.getLogger("watchfiles").setLevel(log_level)
     autoreload.get_reloader = lambda: WatchfilesReloader(watchfiles_settings)
 
-    return ORIGINAL_RUN_WITH_RELOADER(main_func, *args, **kwargs)
+    return run_with_reloader(main_func, *args, **kwargs)
 
 
 autoreload.run_with_reloader = replaced_run_with_reloader
