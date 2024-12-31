@@ -113,7 +113,7 @@ class WatchfilesReloader(autoreload.BaseReloader):
 
 def replaced_run_with_reloader(
     main_func: Callable[..., Any], *args: P.args, **kwargs: P.kwargs
-) -> None:
+) -> int | None:
     try:
         watchfiles_settings = getattr(settings, "WATCHFILES", {}).copy()
     except (ImproperlyConfigured, AttributeError):  # pragma: no cover
