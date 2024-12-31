@@ -116,19 +116,19 @@ def replaced_run_with_reloader(
 ) -> None:
     try:
         watchfiles_settings = getattr(settings, "WATCHFILES", {}).copy()
-    except (ImproperlyConfigured, AttributeError):
-        watchfiles_settings = {}
+    except (ImproperlyConfigured, AttributeError):  # pragma: no cover
+        watchfiles_settings = {}  # pragma: no cover
 
     if "watch_filter" in watchfiles_settings:
         try:
             watchfiles_settings["watch_filter"] = import_string(
                 watchfiles_settings["watch_filter"]
             )()
-        except (AttributeError, ValueError) as exc:
-            logging.warning(
+        except (AttributeError, ValueError) as exc:  # pragma: no cover
+            logging.warning(  # pragma: no cover
                 f"Failed to import watch_filter '{watchfiles_settings['watch_filter']}': {exc}"
             )
-            watchfiles_settings.pop("watch_filter")
+            watchfiles_settings.pop("watch_filter")  # pragma: no cover
 
     settings_verbosity = watchfiles_settings.pop("verbosity", None)
 
