@@ -46,7 +46,46 @@ That's it!
 
 ## Verbosity configuration
 
-...
+You can control the verbosity level either through Django settings or CLI.
+
+1. **Django Settings**
+
+   ```py
+
+    WATCHFILES = {
+      "verbosity": 2,  # Default is 1
+    }
+
+   ```
+
+1. **CLI**
+
+   ```sh
+    python manage.py runserver --verbosity 2
+   ```
+
+### Verbosity Levels
+
+| Verbosity level | Log level | What you'll see |
+| --- | --- | --- |
+| 0 | ERROR | Only errors |
+| 1 | WARNING | Warnings and errors (Default) |
+| 2 | INFO | Info, warnings, and errors |
+| 3 | DEBUG | All messages including debug info |
+
+Other settings you can get from the project settings `WATCHFILES`, e.g.:
+
+```py
+WATCHFILES = {
+     "watch_filter": "path.to.custom_filter",
+     "raise_interrupt": False,
+     "debug": True,  # False by default
+   }
+```
+
+**Note:** Setting `debug = True` is more like a hard override that ignores the verbosity setting completely and sets the verbosity level to 3 (DEBUG level).
+
+---
 
 Django doesn't provide an official API for alternative autoreloader classes.
 Therefore, dj-watchfiles monkey-patches django.utils.autoreload to make its own reloader the only available class.
