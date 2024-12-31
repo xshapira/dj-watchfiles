@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from django.core.exceptions import ImproperlyConfigured
 from django.utils import autoreload
 from django.utils.autoreload import BaseReloader
 from parameterized import parameterized
@@ -293,68 +294,47 @@ class ReplacedRunWithReloaderTests(SimpleTestCase):
             watchfiles_logger = logging.getLogger("watchfiles")
             assert watchfiles_logger.level == expected_level
 
-    def test_replaced_run_with_reloader_watch_filter_import_error(self):
-        """Test handling of watch_filter import failure"""
-        mock_settings = mock.Mock()
-        mock_settings.WATCHFILES = {"watch_filter": "non.existent.path", "debug": True}
-        mock_settings.LOCALE_PATHS = []
-
-        def mock_run_with_reloader(*args, **kwargs):
-            args[0]()
-            return 0
-
-        with (
-            mock.patch(
-                "django.utils.autoreload.run_with_reloader", mock_run_with_reloader
-            ),
-            mock.patch("django.conf.settings", mock_settings),
-        ):
-            replaced_run_with_reloader(lambda *args, **kwargs: None, verbosity=1)
-            reloader = autoreload.get_reloader()
-            self.assertNotIn("watch_filter", reloader.watchfiles_settings)
-
     def test_replaced_run_with_reloader_watch_filter_attribute_error(self):
         """Test handling of watch_filter attribute error"""
         mock_settings = mock.Mock()
-        mock_settings.WATCHFILES = {
-            "watch_filter": "tests.filters.DOES_NOT_EXIST",
-            "debug": True,
-        }
+        mock_settings.USE_I18N = False
         mock_settings.LOCALE_PATHS = []
+        mock_settings.WATCHFILES = {"watch_filter": "tests.filters.NonExistentFilter"}
 
         def mock_run_with_reloader(*args, **kwargs):
             args[0]()
-            return 0
+            return None
 
         with (
+            mock.patch("django.conf.settings", mock_settings),
             mock.patch(
                 "django.utils.autoreload.run_with_reloader", mock_run_with_reloader
             ),
-            mock.patch("django.conf.settings", mock_settings),
         ):
-            replaced_run_with_reloader(lambda *args, **kwargs: None, verbosity=1)
+            replaced_run_with_reloader(lambda: None)
             reloader = autoreload.get_reloader()
-            self.assertNotIn("watch_filter", reloader.watchfiles_settings)
+            assert "watch_filter" not in reloader.watchfiles_settings
 
     def test_replaced_run_with_reloader_watch_filter_value_error(self):
-        """Test handling of watch_filter with invalid path format"""
+        """Test handling of watch_filter value error"""
         mock_settings = mock.Mock()
-        mock_settings.WATCHFILES = {"watch_filter": "invalid", "debug": True}
+        mock_settings.USE_I18N = False
         mock_settings.LOCALE_PATHS = []
+        mock_settings.WATCHFILES = {"watch_filter": "invalid:format:path"}
 
         def mock_run_with_reloader(*args, **kwargs):
             args[0]()
-            return 0
+            return None
 
         with (
+            mock.patch("django.conf.settings", mock_settings),
             mock.patch(
                 "django.utils.autoreload.run_with_reloader", mock_run_with_reloader
             ),
-            mock.patch("django.conf.settings", mock_settings),
         ):
-            replaced_run_with_reloader(lambda *args, **kwargs: None, verbosity=1)
+            replaced_run_with_reloader(lambda: None)
             reloader = autoreload.get_reloader()
-            self.assertNotIn("watch_filter", reloader.watchfiles_settings)
+            assert "watch_filter" not in reloader.watchfiles_settings
 
     def test_replaced_run_with_reloader_watch_filter_not_callable(self):
         """Test handling of watch_filter that exists but isn't callable"""
@@ -378,6 +358,130 @@ class ReplacedRunWithReloaderTests(SimpleTestCase):
             replaced_run_with_reloader(lambda *args, **kwargs: None, verbosity=1)
             reloader = autoreload.get_reloader()
             self.assertNotIn("watch_filter", reloader.watchfiles_settings)
+
+    def test_replaced_run_with_reloader_settings_attribute_error(self):
+        """Test handling of AttributeError when accessing WATCHFILES"""
+        mock_settings = mock.Mock(spec=[])
+        mock_settings.LOCALE_PATHS = []
+        mock_settings.USE_I18N = None
+
+        def mock_run_with_reloader(*args, **kwargs):
+            return None
+
+        with (
+            mock.patch(
+                "django.utils.autoreload.run_with_reloader", mock_run_with_reloader
+            ),
+            mock.patch("django.conf.settings", mock_settings),
+        ):
+            replaced_run_with_reloader(lambda *args, **kwargs: None, verbosity=1)
+            reloader = autoreload.get_reloader()
+            self.assertEqual(reloader.watchfiles_settings, {"debug": False})
+
+    def test_replaced_run_with_reloader_improperly_configured(self):
+        """Test handling of ImproperlyConfigured when accessing WATCHFILES"""
+
+        mock_settings = mock.Mock()
+        mock_settings.USE_I18N = False
+        mock_settings.LOCALE_PATHS = []
+        type(mock_settings).WATCHFILES = mock.PropertyMock(
+            side_effect=ImproperlyConfigured("Settings not configured")
+        )
+
+        def mock_run_with_reloader(*args, **kwargs):
+            args[0]()
+            return None
+
+        with (
+            mock.patch("django.conf.settings", mock_settings),
+            mock.patch(
+                "django.utils.autoreload.run_with_reloader", mock_run_with_reloader
+            ),
+        ):
+            replaced_run_with_reloader(lambda: None)
+            reloader = autoreload.get_reloader()
+            assert reloader.watchfiles_settings == {"debug": False}
+
+    def test_replaced_run_with_reloader_no_watchfiles_settings(self):
+        """Test handling when settings doesn't have WATCHFILES attribute"""
+        mock_settings = mock.Mock(spec=[])
+        mock_settings.LOCALE_PATHS = []
+        mock_settings.USE_I18N = None
+
+        def mock_run_with_reloader(*args, **kwargs):
+            return None
+
+        with (
+            mock.patch(
+                "django.utils.autoreload.run_with_reloader", mock_run_with_reloader
+            ),
+            mock.patch("django.conf.settings", mock_settings),
+        ):
+            replaced_run_with_reloader(lambda *args, **kwargs: None, verbosity=1)
+            reloader = autoreload.get_reloader()
+            self.assertEqual(reloader.watchfiles_settings, {"debug": False})
+
+    def test_replaced_run_with_reloader_invalid_watch_filter(self):
+        """Test handling when watch_filter setting is invalid"""
+        mock_settings = mock.Mock()
+        mock_settings.WATCHFILES = {
+            "watch_filter": "invalid.path.that.doesnt.exist",
+            "debug": True,
+        }
+        mock_settings.LOCALE_PATHS = []
+
+        def mock_run_with_reloader(*args, **kwargs):
+            args[0]()
+            return 0
+
+        with (
+            mock.patch(
+                "django.utils.autoreload.run_with_reloader", mock_run_with_reloader
+            ),
+            mock.patch("django.conf.settings", mock_settings),
+        ):
+            replaced_run_with_reloader(lambda *args, **kwargs: None, verbosity=1)
+            reloader = autoreload.get_reloader()
+            self.assertNotIn("watch_filter", reloader.watchfiles_settings)
+
+    def test_replaced_run_with_reloader_watch_filter_import_error(self):
+        """Test handling of watch_filter import failure"""
+        mock_settings = mock.Mock()
+        mock_settings.WATCHFILES = {
+            "watch_filter": "tests.filters.DOES_NOT_EXIST",
+            "debug": True,
+        }
+        mock_settings.LOCALE_PATHS = []
+
+        with (
+            mock.patch(
+                "django.utils.autoreload.run_with_reloader", self.mock_run_with_reloader
+            ),
+            mock.patch("django.conf.settings", mock_settings),
+        ):
+            replaced_run_with_reloader(lambda *args, **kwargs: None, verbosity=1)
+            reloader = autoreload.get_reloader()
+            self.assertNotIn("watch_filter", reloader.watchfiles_settings)
+
+    def test_replaced_run_with_reloader_attribute_error(self):
+        """Test handling of AttributeError when accessing WATCHFILES"""
+        mock_settings = mock.Mock(spec=[])
+        mock_settings.USE_I18N = False
+        mock_settings.LOCALE_PATHS = []
+
+        def mock_run_with_reloader(*args, **kwargs):
+            args[0]()
+            return None
+
+        with (
+            mock.patch("django.conf.settings", mock_settings),
+            mock.patch(
+                "django.utils.autoreload.run_with_reloader", mock_run_with_reloader
+            ),
+        ):
+            replaced_run_with_reloader(lambda: None)
+            reloader = autoreload.get_reloader()
+            assert reloader.watchfiles_settings == {"debug": False}
 
 
 class CustomFilterTests(SimpleTestCase):
