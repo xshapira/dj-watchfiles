@@ -60,7 +60,7 @@ test = "python -m django test --settings tests.settings"
 test-cov = "coverage run -m django test --settings tests.settings"
 cov-report = ["coverage combine", "coverage report"]
 cov = ["test-cov", "cov-report"]
-pytest-cov = "pytest --cov-branch --cov-report=xml"
+pytest-cov = "pytest --cov=src/dj_watchfiles --cov-branch --cov-report=xml"
 
 [project.urls]
 Homepage = "https://github.com/xshapira/dj-watchfiles"
@@ -109,7 +109,7 @@ testpaths = ["tests"]
 markers = ["flaky: marks tests that may require multiple runs to pass"]
 
 [tool.coverage.run]
-source = ["src", "tests"]
+source = ["src/dj_watchfiles", "tests"]
 branch = true
 parallel = true
 omit = ["*/migrations/*", "*/tests/*", "*/conftest.py"]
