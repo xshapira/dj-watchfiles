@@ -1,6 +1,6 @@
 # dj-watchfiles
 
-[![GitHub Actions (CI)](https://github.com/xshapira/dj-watchfiles/workflows/Run%20tests%20and%upload%20coverage/badge.svg)](https://github.com/xshapira/dj-watchfiles)
+[![Run tests and upload coverage](https://github.com/xshapira/dj-watchfiles/actions/workflows/main.yml/badge.svg)](https://github.com/xshapira/dj-watchfiles/actions/workflows/main.yml)
 [![Codecov](https://img.shields.io/codecov/c/gh/xshapira/dj-watchfiles?color=%2334D058)](https://codecov.io/gh/xshapira/dj-watchfiles)
 [![PyPI version](https://badge.fury.io/py/dj-watchfiles.svg)](https://badge.fury.io/py/dj-watchfiles)
 
