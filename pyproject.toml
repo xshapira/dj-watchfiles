@@ -106,6 +106,7 @@ lint.ignore = [
 DJANGO_SETTINGS_MODULE = "tests.settings"
 pythonpath = [".", "src"]
 testpaths = ["tests"]
+markers = ["flaky: marks tests that may require multiple runs to pass"]
 
 [tool.coverage.run]
 source = ["src", "tests"]
