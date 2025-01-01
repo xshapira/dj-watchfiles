@@ -47,6 +47,7 @@ django = ["5.1"]
 dependencies = [
   "django~={matrix:django}.0",
   "pytest",
+  "pytest-cov",
   "coverage[toml]",
   "pytest-django",
   "pytest-randomly",
@@ -59,6 +60,7 @@ test = "python -m django test --settings tests.settings"
 test-cov = "coverage run -m django test --settings tests.settings"
 cov-report = ["coverage combine", "coverage report"]
 cov = ["test-cov", "cov-report"]
+pytest-cov = "pytest --cov-branch --cov-report=xml"
 
 [project.urls]
 Homepage = "https://github.com/xshapira/dj-watchfiles"
