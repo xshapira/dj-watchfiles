@@ -33,11 +33,11 @@ jobs:
           key: ${{ runner.os }}-python-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}-root
       - name: Install Dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: uv pip install -e .[all,dev,test] --system
+        run: uv pip install --system -e .[all,dev,test]
       - name: Install Django
-        run: uv pip install "Django${{ matrix.django-version }}" --system
+        run: uv pip install --system "Django${{ matrix.django-version }}"
       - name: Install Hatch project manager
-        run: uv pip install hatch --system
+        run: uv pip install --system hatch
       - name: Run tests
         run: hatch run test:pytest-cov
       - name: Upload results to Codecov
