@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 (2024-12-28)
+## 2.0.1 (2025-01-01)
 
 - Allow managing the verbosity level
 - Add tests for managing watchfiles settings
