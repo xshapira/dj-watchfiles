@@ -9,3 +9,4 @@
 .venv
 .vscode
 .sourcery.yaml
+uv.lock
