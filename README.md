@@ -1,8 +1,8 @@
 # dj-watchfiles
 
 [![Run tests and upload coverage](https://github.com/xshapira/dj-watchfiles/actions/workflows/main.yml/badge.svg)](https://github.com/xshapira/dj-watchfiles/actions/workflows/main.yml)
-[![Codecov](https://img.shields.io/codecov/c/gh/xshapira/dj-watchfiles?color=%2334D058)](https://codecov.io/gh/xshapira/dj-watchfiles)
-[![PyPI version](https://badge.fury.io/py/dj-watchfiles.svg)](https://badge.fury.io/py/dj-watchfiles)
+[![Codecov](https://img.shields.io/codecov/c/gh/xshapira/dj-watchfiles?color=%33CE58)](https://codecov.io/gh/xshapira/dj-watchfiles)
+[![PyPI - Version](https://img.shields.io/pypi/v/dj-watchfiles)]
 
 Use [watchfiles](https://watchfiles.helpmanual.io/) in Django's autoreloader.
 
