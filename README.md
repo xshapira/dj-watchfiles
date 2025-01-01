@@ -37,7 +37,7 @@ Django 4.2 to 5.1 supported.
    ```sh
    INSTALLED_APPS = [
         ...,
-        "dj-watchfiles",
+        "dj_watchfiles",
         ...,
     ]
    ```
